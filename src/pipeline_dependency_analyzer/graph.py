@@ -27,3 +27,39 @@ def graph_has_node(graph: dict[str, list[str]], pipeline_id: str) -> bool:
 
 def get_dependencies(graph: dict[str, list[str]], pipeline_id: str) -> list[str]:
     return graph.get(pipeline_id, [])
+
+
+def detect_cycles(graph: dict[str, list[str]]) -> list[list[str]]:
+    visited: set[str] = set()
+    visiting: set[str] = set()
+    stack: list[str] = []
+    cycles: list[list[str]] = []
+
+    def visit(node: str) -> None:
+        if node in visiting:
+            cycle_start = stack.index(node)
+            cycles.append(stack[cycle_start:] + [node])
+            return
+
+        if node in visited:
+            return
+
+        visiting.add(node)
+        stack.append(node)
+
+        for dependency in graph.get(node, []):
+            if dependency in graph:
+                visit(dependency)
+
+        stack.pop()
+        visiting.remove(node)
+        visited.add(node)
+
+    for node in graph:
+        visit(node)
+
+    return cycles
+
+
+def graph_has_cycles(graph: dict[str, list[str]]) -> bool:
+    return len(detect_cycles(graph)) > 0
