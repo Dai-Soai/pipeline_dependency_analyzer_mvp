@@ -63,3 +63,31 @@ def detect_cycles(graph: dict[str, list[str]]) -> list[list[str]]:
 
 def graph_has_cycles(graph: dict[str, list[str]]) -> bool:
     return len(detect_cycles(graph)) > 0
+
+
+def topological_sort(graph: dict[str, list[str]]) -> list[str]:
+    visited: set[str] = set()
+    visiting: set[str] = set()
+    order: list[str] = []
+
+    def visit(node: str) -> None:
+        if node in visiting:
+            raise ValueError(f"Cycle detected at node: {node}")
+
+        if node in visited:
+            return
+
+        visiting.add(node)
+
+        for dependency in graph.get(node, []):
+            if dependency in graph:
+                visit(dependency)
+
+        visiting.remove(node)
+        visited.add(node)
+        order.append(node)
+
+    for node in graph:
+        visit(node)
+
+    return order

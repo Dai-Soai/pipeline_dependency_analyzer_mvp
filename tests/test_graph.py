@@ -7,6 +7,7 @@ from pipeline_dependency_analyzer.graph import (
     get_dependencies,
     graph_has_cycles,
     graph_has_node,
+    topological_sort,
 )
 
 
@@ -110,3 +111,67 @@ def test_detect_cycles_detects_self_cycle():
 
     assert cycles == [["a", "a"]]
     assert graph_has_cycles(graph) is True
+
+
+def test_topological_sort_orders_dependencies_first():
+    graph = {
+        "database": [],
+        "prepare": ["database"],
+        "workflow": ["prepare"],
+    }
+
+    order = topological_sort(graph)
+
+    assert order == ["database", "prepare", "workflow"]
+
+
+def test_topological_sort_handles_branch_dependencies():
+    graph = {
+        "workflow": ["prepare", "database"],
+        "prepare": ["database"],
+        "database": [],
+    }
+
+    order = topological_sort(graph)
+
+    assert order.index("database") < order.index("prepare")
+    assert order.index("prepare") < order.index("workflow")
+
+
+def test_topological_sort_orders_dependencies_first():
+    graph = {
+        "database": [],
+        "prepare": ["database"],
+        "workflow": ["prepare"],
+    }
+
+    order = topological_sort(graph)
+
+    assert order == ["database", "prepare", "workflow"]
+
+
+def test_topological_sort_handles_branch_dependencies():
+    graph = {
+        "workflow": ["prepare", "database"],
+        "prepare": ["database"],
+        "database": [],
+    }
+
+    order = topological_sort(graph)
+
+    assert order.index("database") < order.index("prepare")
+    assert order.index("prepare") < order.index("workflow")
+
+
+def test_topological_sort_rejects_cycles():
+    graph = {
+        "a": ["b"],
+        "b": ["a"],
+    }
+
+    try:
+        topological_sort(graph)
+    except ValueError as exc:
+        assert "Cycle detected at node" in str(exc)
+    else:
+        raise AssertionError("Expected ValueError")
